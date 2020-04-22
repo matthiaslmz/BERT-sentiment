@@ -1,32 +1,31 @@
 import os
-
+import src.preprocess
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
 import numpy as np
 from tqdm import tqdm
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score
 
 from transformers import (BertConfig,
                         BertTokenizer,
-                        BertForTokenClassification,
+                        BertForSequenceClassification,
                         AdamW,
                         get_linear_schedule_with_warmup)
 
-class BERTSentiment():
+class BERTSentiment:
+    DEVICE = "cuda:1" if torch.cuda.is_available() else "cpu"
+
     def __init__(self,
-                 bert_pretrained_model="../models/bert-base-uncased",
+                 bert_pretrained_model="../speech/models/bert-base-uncased",
                  bert_pretrained_tokenizer=None,
                  train_batch_size=8,
                  eval_batch_size=8,
                  num_labels=2,
                  max_len = 512,
                  learning_rate=3e-5,
-                 transcriptions_path=None,
-                 inputs_path=None,
-                 labels_path=None,
-                 cached_train_path=None,
-                 cached_eval_path=None,
+                 train_dset=None,
+                 eval_dset=None,
                  dataset_path=None):
 
         # define hyperparameters
@@ -34,17 +33,16 @@ class BERTSentiment():
         self.eval_batch_size = eval_batch_size
         self.num_labels = num_labels
 
-        DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
         # loading pre-trained models
         self.config = BertConfig.from_pretrained(bert_pretrained_model)
         self.config.num_labels = num_labels
-        self.model = BertForTokenClassification.from_pretrained(
+        self.model = BertForSequenceClassification.from_pretrained(
             bert_pretrained_model, config=self.config).to(self.DEVICE)
         self.tokenizer = BertTokenizer.from_pretrained(bert_pretrained_model)
 
         # creating / loading datasets
-        self.train_dset = torch.load(cached_train_path)
-        self.eval_dset = torch.load(cached_eval_path)
+        self.train_dset = train_dset
+        self.eval_dset = eval_dset
         self.train_loader = DataLoader(self.train_dset,
                                        batch_size=self.train_batch_size,
                                        shuffle=True)
@@ -52,13 +50,14 @@ class BERTSentiment():
                                       batch_size=self.eval_batch_size)
                                     
     def train_model(self,
-                    num_epochs=20,
+                    num_epochs=5,
                     learning_rate=5e-5,
                     ckpt_every=1000,
                     warmup_ratio=0.1,
                     ckpt_path=None,
-                    output_path=None,
-                    baseline=False):
+                    output_path=None):
+        
+        self.model.train()
 
         num_total_steps = len(self.train_loader) * num_epochs
         num_warmup_steps = int(num_total_steps * warmup_ratio)
@@ -73,8 +72,8 @@ class BERTSentiment():
         # define empty lists and counters to keep track of metrics
         iter_count = 0
         ckpt_loss = 0
-        ckpt_num_correct = 0
-        ckpt_num_total = 0
+        all_train_labels = []
+        all_train_predictions = []
         all_train_loss = []
         all_eval_loss = []
         all_train_accuracy = []
@@ -85,29 +84,23 @@ class BERTSentiment():
             print("")
             print('======== Epoch {:} / {:} ========'.format(epoch + 1, num_epochs))
             # loop over every batch within the training dataset
-            for iter, (inputs, labels, attns) in enumerate(tqdm(self.train_loader, desc="Training")):
+            for iter, batch in enumerate(tqdm(self.train_loader, desc="Training")):
 
                 # reset optimizer gradient
                 optimizer.zero_grad()
 
                 # putting inputs to device
+                inputs = batch["input_ids"]
+                attns = batch["attention_masks"]
+                labels = batch["label_tensor"]
+
                 inputs = inputs.to(self.DEVICE)
-                labels = labels.to(self.DEVICE)
                 attns = attns.to(self.DEVICE)
+                labels = labels.to(self.DEVICE)
 
-                # feed to model
-                if not baseline:
-                    outputs = self.model(inputs, labels=labels,
-                                        attention_mask=attns)
-                    loss, scores = outputs[:2]
-                else:
-                    criterion = nn.CrossEntropyLoss()
-                    scores = self.model(inputs)
-                    scores = scores.view(-1, self.config.num_labels)
-                    labels = labels.flatten()
-                    attns = attns.flatten()
-                    loss = criterion(scores, labels)
-
+                outputs = self.model(inputs, labels=labels, attention_mask=attns)
+                loss, scores = outputs[:2]
+#
                 predictions = torch.argmax(scores, dim=-1)
 
                 # backprop
@@ -117,9 +110,9 @@ class BERTSentiment():
 
                 # add to totals for checkpoint
                 ckpt_loss += loss.item()
-                ckpt_num_correct += ((predictions ==
-                                    labels).long() * attns).sum().item()
-                ckpt_num_total += attns.sum().item()
+                
+                all_train_labels += labels.cpu().flatten().tolist()
+                all_train_predictions += predictions.cpu().flatten().tolist()
 
                 # evaluate and save model every checkpoint
                 if iter_count % ckpt_every == 0:
@@ -132,12 +125,9 @@ class BERTSentiment():
                     ckpt_loss = 0
 
                     # accuracy
-                    all_train_accuracy.append(
-                        (ckpt_num_correct / ckpt_num_total) * 100)
-                    ckpt_num_correct = 0
-                    ckpt_num_total = 0
+                    all_train_accuracy.append(accuracy_score(all_train_labels, all_train_predictions))
 
-                    eval_loss, eval_accuracy, eval_conf_matrix = self.evaluate_model(baseline=baseline)
+                    eval_loss, eval_accuracy, eval_conf_matrix = self.evaluate_model()
 
                     all_eval_loss.append(eval_loss)
                     all_eval_accuracy.append(eval_accuracy)
@@ -153,7 +143,7 @@ class BERTSentiment():
                     ckpt_path_formatted = ckpt_path % (iter_count)
                     if not os.path.exists(ckpt_path_formatted):
                         os.makedirs(ckpt_path_formatted)
-                    if not baseline:
+
                         self.model.save_pretrained(ckpt_path_formatted)
                         self.tokenizer.save_pretrained(ckpt_path_formatted)
                     else:
@@ -180,7 +170,7 @@ class BERTSentiment():
 
                 iter_count += 1
 
-    def evaluate_model(self, save_results=True, baseline=False):
+    def evaluate_model(self, save_results=True):
 
         self.model.eval()
 
@@ -192,7 +182,11 @@ class BERTSentiment():
         all_attns = []
 
         with torch.no_grad():
-            for (inputs, labels, attns) in tqdm(self.eval_loader, desc="Evaluate"):
+            for batch in tqdm(self.eval_loader, desc="Evaluate"):
+
+                inputs = batch["input_ids"]
+                attns = batch["attention_masks"]
+                labels = batch["label_tensor"]
 
                 # putting inputs to device
                 inputs = inputs.to(self.DEVICE)
@@ -200,27 +194,16 @@ class BERTSentiment():
                 attns = attns.to(self.DEVICE)
 
                 # feed to model
-                if not baseline:
-                    outputs = self.model(inputs, labels=labels,
-                                        attention_mask=attns)
-                    loss, scores = outputs[:2]
-                else:
-                    criterion = nn.CrossEntropyLoss()
-                    scores = self.model(inputs)
-                    scores = scores.view(-1, self.config.num_labels)
-                    labels = labels.flatten()
-                    attns = attns.flatten()
-                    loss = criterion(scores, labels)
+                outputs = self.model(inputs, labels=labels,
+                                    attention_mask=attns)
+                loss, scores = outputs[:2]
 
                 predictions = torch.argmax(scores, dim=-1)
 
                 # add loss to total loss
                 total_eval_loss += loss.item()
-
-                # compute accuracy with two number (important to remove tokens with attention mask!)
-                total_num_correct += ((predictions ==
-                                       labels).long() * attns).sum().item()
-                total_num_examples += attns.sum().item()
+                total_num_correct += ((predictions == labels).long()).sum().item()
+                total_num_examples += labels.sum().item()
 
                 # used to create confusion matrix
                 all_labels += labels.cpu().flatten().tolist()
@@ -229,15 +212,9 @@ class BERTSentiment():
 
         self.model.train()
 
-        # remove elements where attn mask is 0
-        all_labels = [all_labels[i]
-                      for i in range(len(all_labels)) if all_attns[i] != 0]
-        all_predictions = [all_predictions[i]
-                           for i in range(len(all_predictions)) if all_attns[i] != 0]
-
         # compute loss, accuracy and confusion matrix
         eval_loss = total_eval_loss / len(self.eval_loader)
-        eval_accuracy = (total_num_correct / total_num_examples) * 100
+        eval_accuracy = accuracy_score(all_labels, all_predictions)
         conf_matrix = confusion_matrix(all_labels, all_predictions)
 
         return eval_loss, eval_accuracy, conf_matrix
