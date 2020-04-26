@@ -17,16 +17,15 @@ class BERTSentiment:
     DEVICE = "cuda:1" if torch.cuda.is_available() else "cpu"
 
     def __init__(self,
-                 bert_pretrained_model="../speech/models/bert-base-uncased",
+                 bert_pretrained_model="/misc/labshare/datasets1/speech/models/bert-base-uncased",
                  bert_pretrained_tokenizer=None,
                  train_batch_size=8,
                  eval_batch_size=8,
                  num_labels=2,
-                 max_len = 512,
+                 max_len=512,
                  learning_rate=3e-5,
                  train_dset=None,
-                 eval_dset=None,
-                 dataset_path=None):
+                 eval_dset=None):
 
         # define hyperparameters
         self.train_batch_size = train_batch_size
@@ -72,12 +71,12 @@ class BERTSentiment:
         # define empty lists and counters to keep track of metrics
         iter_count = 0
         ckpt_loss = 0
-        all_train_labels = []
-        all_train_predictions = []
         all_train_loss = []
         all_eval_loss = []
         all_train_accuracy = []
         all_eval_accuracy = []
+        ckpt_num_correct = 0
+        ckpt_num_total = 0
 
         # loop over dataset for num_epochs
         for epoch in tqdm(range(num_epochs), desc="Epoch   "):
@@ -100,7 +99,7 @@ class BERTSentiment:
 
                 outputs = self.model(inputs, labels=labels, attention_mask=attns)
                 loss, scores = outputs[:2]
-#
+
                 predictions = torch.argmax(scores, dim=-1)
 
                 # backprop
@@ -110,9 +109,8 @@ class BERTSentiment:
 
                 # add to totals for checkpoint
                 ckpt_loss += loss.item()
-                
-                all_train_labels += labels.cpu().flatten().tolist()
-                all_train_predictions += predictions.cpu().flatten().tolist()
+                ckpt_num_correct += ((predictions == labels).long()).sum().item()
+                ckpt_num_total += labels.size(0)
 
                 # evaluate and save model every checkpoint
                 if iter_count % ckpt_every == 0:
@@ -125,9 +123,11 @@ class BERTSentiment:
                     ckpt_loss = 0
 
                     # accuracy
-                    all_train_accuracy.append(accuracy_score(all_train_labels, all_train_predictions))
+                    all_train_accuracy.append(ckpt_num_correct / ckpt_num_total)
+                    ckpt_num_correct = 0 
+                    ckpt_num_total = 0
 
-                    eval_loss, eval_accuracy, eval_conf_matrix = self.evaluate_model()
+                    eval_loss, eval_accuracy = self.evaluate_model()
 
                     all_eval_loss.append(eval_loss)
                     all_eval_accuracy.append(eval_accuracy)
@@ -164,10 +164,6 @@ class BERTSentiment:
                     np.savetxt(os.path.join(output_path_formatted, f"eval_accuracy_{iter_count}.txt"),
                                all_eval_accuracy)
 
-                    # save confusion matrix
-                    np.savetxt(os.path.join(output_path_formatted, f"confusion_matrix_{iter_count}.txt"),
-                               eval_conf_matrix)
-
                 iter_count += 1
 
     def evaluate_model(self, save_results=True):
@@ -203,7 +199,7 @@ class BERTSentiment:
                 # add loss to total loss
                 total_eval_loss += loss.item()
                 total_num_correct += ((predictions == labels).long()).sum().item()
-                total_num_examples += labels.sum().item()
+                total_num_examples += labels.size(0)
 
                 # used to create confusion matrix
                 all_labels += labels.cpu().flatten().tolist()
@@ -215,6 +211,5 @@ class BERTSentiment:
         # compute loss, accuracy and confusion matrix
         eval_loss = total_eval_loss / len(self.eval_loader)
         eval_accuracy = accuracy_score(all_labels, all_predictions)
-        conf_matrix = confusion_matrix(all_labels, all_predictions)
 
-        return eval_loss, eval_accuracy, conf_matrix
+        return eval_loss, eval_accuracy

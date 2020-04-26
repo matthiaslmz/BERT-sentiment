@@ -34,7 +34,7 @@ class IMDBDataset:
     def __init__(self, review, label):
         self.review = review
         self.label = label
-        self.tokenizer = BertTokenizer.from_pretrained("/misc/labshare/datasets1/speech/models/bert-base-uncased", do_lower_case=True)
+        self.tokenizer = BertTokenizer.from_pretrained("C:/Users/MatthiasL/Desktop/DATA/Desktop/DATA/ghdata/models/bert-base-uncased", do_lower_case=True)
 
     def __len__(self):
         return len(self.review)
@@ -42,61 +42,54 @@ class IMDBDataset:
     def __getitem__(self, item):
         review = str(self.review[item])
 
-        encoded_inputs = self.tokenizer.encode_plus(review, add_special_tokens=True, max_length=512, 
-        pad_to_max_length=True)
+        encoded_inputs = self.tokenizer.encode_plus(review, add_special_tokens=True, max_length=512, pad_to_max_length=True)
         
         input_tensor = encoded_inputs['input_ids']
         attention_tensor = encoded_inputs['attention_mask']
         label_tensor = torch.LongTensor(self.label[item])
 
-        # dataset = TensorDataset(torch.tensor(input_tensor, dtype=torch.long), 
-        # torch.tensor(attention_tensor, dtype=torch.long), 
-        # torch.tensor(label_tensor, dtype=torch.long))
-        # return dataset
-        #return (torch.tensor(input_tensor, dtype=torch.long), torch.tensor(attention_tensor, dtype=torch.long), torch.tensor(label_tensor, dtype=torch.long))
-
         return {
-            'input_ids': torch.tensor(input_tensor,dtype=torch.long),
+            'input_ids': torch.tensor(input_tensor, dtype=torch.long),
             'attention_masks': torch.tensor(attention_tensor, dtype=torch.long),
             'label_tensor': torch.tensor(self.label[item], dtype=torch.long)
         }
         
 
-if __name__ == "__main__":
-    tokenizer = BertTokenizer.from_pretrained("/misc/labshare/datasets1/speech/models/bert-base-uncased", do_lower_case=True)
-    df = pd.read_csv("/misc/DLshare/home/rpzqk242/imdb_dataset.csv")
-    df = preprocess_imdb(df)
+# if __name__ == "__main__":
+    # tokenizer = BertTokenizer.from_pretrained("/misc/labshare/datasets1/speech/models/bert-base-uncased", do_lower_case=True)
+    # df = pd.read_csv("/misc/DLshare/home/rpzqk242/imdb_dataset.csv")
+    # df = preprocess_imdb(df)
 
-    encoded_inputs = tokenizer.encode_plus(df.review.values[0], add_special_tokens=True, max_length=512, 
-    pad_to_max_length=True)
+    # encoded_inputs = tokenizer.encode_plus(df.review.values[0], add_special_tokens=True, max_length=512, 
+    # pad_to_max_length=True)
 
-    inputs_tensor = encoded_inputs['input_ids']
-    torch.tensor(inputs_tensor, dtype=torch.long).shape
-    labels_tensor =  torch.LongTensor(df.sentiment.values[0])
-    labels_tensor.shape
-    attention_tensor = encoded_inputs['attention_mask']
-    torch.tensor(inputs_tensor, dtype=torch.long).shape
-    torch.tensor(attention_tensor, dtype=torch.long)
-    inputs_tensor
+    # inputs_tensor = encoded_inputs['input_ids']
+    # torch.tensor(inputs_tensor, dtype=torch.long).shape
+    # labels_tensor =  torch.LongTensor(df.sentiment.values[0])
+    # labels_tensor.shape
+    # attention_tensor = encoded_inputs['attention_mask']
+    # torch.tensor(inputs_tensor, dtype=torch.long).shape
+    # torch.tensor(attention_tensor, dtype=torch.long)
+    # inputs_tensor
 
-    qwe = {
-        'input_ids':inputs_tensor,
-        'labels':labels_tensor,
-        'attention_masks': attention_tensor}
-    qwe
+    # qwe = {
+    #     'input_ids':inputs_tensor,
+    #     'labels':labels_tensor,
+    #     'attention_masks': attention_tensor}
+    # qwe
     
-    TensorDataset(inputs_tensor, labels_tensor, attention_tensor)[0]
+    # TensorDataset(inputs_tensor, labels_tensor, attention_tensor)[0]
 
-    df_train, df_valid = split_train_valid(df, test_size=0.1, random_state=420)
+    # df_train, df_valid = split_train_valid(df, test_size=0.1, random_state=420)
 
-    train_dataset = IMDBDataset(review = df_train.review.values, label=df_train.sentiment.values)
-    valid_dataset = IMDBDataset(review = df_valid.review.values, label=df_valid.sentiment.values)
+    # train_dataset = IMDBDataset(review = df_train.review.values, label=df_train.sentiment.values)
+    # valid_dataset = IMDBDataset(review = df_valid.review.values, label=df_valid.sentiment.values)
 
-    train_loader = DataLoader(train_dataset,batch_size=8)
-    len(train_loader)
+    # train_loader = DataLoader(train_dataset,batch_size=8)
+    # len(train_loader)
 
-    for step, data in enumerate(train_loader):
-        print(data)
+    # for step, data in enumerate(train_loader):
+    #     print(data)
 
 
 # m = nn.Sigmoid()
@@ -116,10 +109,14 @@ if __name__ == "__main__":
 # model = BertForSequenceClassification.from_pretrained('/misc/labshare/datasets1/speech/models/bert-base-uncased')
 # input_ids = torch.tensor(tokenizer.encode("Hello, my dog is cute")).unsqueeze(0)  # Batch size 1
 # input_ids
-# labels = torch.LongTensor([1]).unsqueeze(0)  # Batch size 1
-# labels
+# labels = torch.LongTensor([1,2,3]).unsqueeze(0)  # Batch size 1
+
+# labels.size(0)
 # outputs = model(input_ids, labels=labels)
 # outputs
 # loss, logits = outputs[:2]
-# loss
+# logits = logits.detach().cpu().numpy()
 # logits
+# pred_flat = np.argmax(logits, axis=1).flatten()
+# pred_flat
+# torch.argmax(logits, dim=-1)

@@ -22,8 +22,7 @@ def main():
     train_dataset = IMDBDataset(review=df_train.review.values, label=df_train.sentiment.values)
     valid_dataset = IMDBDataset(review=df_valid.review.values, label=df_valid.sentiment.values)
 
-
-    model =  BERTSentiment(train_dset=train_dataset, eval_dset=valid_dataset)
+    model = BERTSentiment(train_dset=train_dataset, eval_dset=valid_dataset)
     model.train_model(ckpt_path="/misc/DLshare/home/rpzqk242/BERT-sentiment/checkpoints/checkpoint-%04d",
                     output_path="/misc/DLshare/home/rpzqk242/BERT-sentiment/out/checkpoint-%04d")
 
