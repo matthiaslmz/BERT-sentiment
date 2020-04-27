@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 
 def main():
 
-    df = pd.read_csv("/misc/DLshare/home/rpzqk242/imdb_dataset.csv")
+    df = pd.read_csv("C:/Users/MatthiasL/Desktop/DATA/ghdata/BERT-sentiment/imdb_dataset.csv")
     df = preprocess_imdb(df)
     df_train, df_valid = split_train_valid(dataframe=df, test_size=0.1, random_state=420)
 
@@ -23,8 +23,8 @@ def main():
     valid_dataset = IMDBDataset(review=df_valid.review.values, label=df_valid.sentiment.values)
 
     model = BERTSentiment(train_dset=train_dataset, eval_dset=valid_dataset)
-    model.train_model(ckpt_path="/misc/DLshare/home/rpzqk242/BERT-sentiment/checkpoints/checkpoint-%04d",
-                    output_path="/misc/DLshare/home/rpzqk242/BERT-sentiment/out/checkpoint-%04d")
+    model.train_model(ckpt_path="C:/Users/MatthiasL/Desktop/DATA/ghdata/BERT-sentiment/checkpoints/checkpoint-%04d",
+                    output_path="C:/Users/MatthiasL/Desktop/DATA/ghdata/BERT-sentiment/out/checkpoint-%04d")
 
 if __name__ == "__main__":
     main()
