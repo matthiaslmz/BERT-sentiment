@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <body>
+    {% from "_formhelpers.html" import render_field %}
+
+    <div class="banner row">
+        <h2 id="title" style="margin-left: 2%;"> BERT Movie Reviews Sentiment Classification</h2>
+        <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    </div>
+
+    <div> 
+        <h3 id="header" style="margin-left: 2%;"> Enter a movie review:</h3>
+    </div>
+    <form method=post action="/results">
+
+    <dl>
+        {{ render_field(form.sentence) }}
+    </dl>
+
+    <input type=submit style="margin-left: 2%;" value='Submit Review' name='submit_btn'>
+
+    </form>
+
+  </body>
+</html>

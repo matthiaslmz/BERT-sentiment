@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <body>
+
+    {% from "_formhelpers.html" import render_field %}
+
+    <div class="banner row">
+        <h2 id="title" style="margin-left: 2%;"> BERT Movie Reviews Sentiment Classification</h2>
+        <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    </div>
+
+    <h3 style="margin-left: 2%;"><strong>Your movie review:</strong></h3>
+    <div class="boxed" style="margin-left: 2%">
+      <p style="margin-left: 0.2%"> {{ content }}</p>
+    </div>
+
+    <h3 style="margin-left: 2%"> <strong>Prediction:</strong></h3>
+    <div style="margin-left: 2%">
+      Positive: <strong>{{ pos_prob }}%</strong> </br>
+      Negative: <strong>{{ neg_prob }}%</strong>
+    </div>
+  </br>
+    <div id='button' style="margin-left: 2%">
+        <form action="/thanks" method="post">
+          <input type=hidden value='{{ pos_prob }}' name='positive prediction'>
+          <input type=hidden value='{{ neg_prob }}' name='negative prediction'>
+          <input type=submit value='Correct' name='feedback_button'>
+          <input type=submit value='Incorrect' name='feedback_button'>
+          <input type=hidden value='{{ content }}' name='review'>
+        </form>
+    </div>
+
+    <div id='button' style="margin-left: 2%">
+        <form action="/">
+          <input type=submit value='Submit another review'>
+        </form>
+    </div>
+
+  </body>
+</html>
