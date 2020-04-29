@@ -1,8 +1,10 @@
+import os
+import numpy as np
+import sqlite3
 from flask import Flask, request, jsonify, render_template
 from wtforms import Form, TextAreaField, validators
-import numpy as np
-from transformers import BertForSequenceClassification, BertTokenizer
 import torch
+from transformers import BertForSequenceClassification, BertTokenizer
 
 
 app = Flask(__name__)
@@ -11,16 +13,16 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 saved_model_path = "C:/Users/MatthiasL/Desktop/DATA/ghdata/BERT-sentiment/checkpoints/checkpoint-11000/"
 model = BertForSequenceClassification.from_pretrained(saved_model_path)
 tokenizer = BertTokenizer.from_pretrained(saved_model_path)
+db_name = os.path.join(os.path.dirname(__file__), 'movie_reviews.sqlite')
 model.eval()
 
 class ReviewForm(Form):
     sentence = TextAreaField('', [validators.DataRequired(), validators.length(min=15)])
 
-def sqlite_entry(path, document, y):
+def sqlite_insert(path, document, prediction):
     conn = sqlite3.connect(path)
     c = conn.cursor()
-    c.execute("INSERT INTO review_db (review, sentiment, date)"\
-    " VALUES (?, ?, DATETIME('now'))", (document, y))
+    c.execute("INSERT INTO review_db (review, sentiment, date) VALUES (?, ?, DATETIME('now'))", (document, prediction))
     conn.commit()
     conn.close()
 
@@ -73,6 +75,18 @@ def results():
                             prediction = predicted_class)
     return render_template('reviewform.html', form=form)
 
+@app.route('/thanks', methods=['POST'])
+def feedback():
+    feedback = request.form['feedback_button']
+    review = request.form['review']
+    prediction = request.form['prediction']
+
+    if feedback == 'Incorrect':
+        prediction = int(not(prediction))
+
+    sqlite_insert(db_name, review, prediction)
+    return render_template('thanks.html')
+
 
 # @app.route("/predict")
 # def predict():
@@ -82,7 +96,7 @@ def results():
 #     return jsonify({'sentence': txt, 'positive': str(pos_pred), 'negative': str(neg_pred)})
 
 if __name__ == "__main__":
-    app.run(port=8007, debug=True)
+    app.run(port=8008, debug=True)
 
     #http://localhost:59829/predict?sentence=amazing!
 
@@ -113,4 +127,6 @@ if __name__ == "__main__":
 
     # outputs[0][0]
 
-
+    curr_dir = os.getcwd()
+    db = os.path.join(curr_dir, "movie_reviews.sqlite")
+    sqlite_insert(db, "testing", 0)

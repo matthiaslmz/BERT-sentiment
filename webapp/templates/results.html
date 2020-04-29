@@ -22,8 +22,7 @@
   </br>
     <div id='button' style="margin-left: 2%">
         <form action="/thanks" method="post">
-          <input type=hidden value='{{ pos_prob }}' name='positive prediction'>
-          <input type=hidden value='{{ neg_prob }}' name='negative prediction'>
+          <input type=hidden value='{{ prediction }}' name='prediction'>
           <input type=submit value='Correct' name='feedback_button'>
           <input type=submit value='Incorrect' name='feedback_button'>
           <input type=hidden value='{{ content }}' name='review'>
