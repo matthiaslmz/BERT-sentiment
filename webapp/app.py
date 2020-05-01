@@ -87,16 +87,8 @@ def feedback():
     sqlite_insert(db_name, review, prediction)
     return render_template('thanks.html')
 
-
-# @app.route("/predict")
-# def predict():
-#     txt = request.args.get("sentence")
-#     neg_pred = text_pred(txt, model=model, tokenizer=tokenizer)
-#     pos_pred = 1 - neg_pred
-#     return jsonify({'sentence': txt, 'positive': str(pos_pred), 'negative': str(neg_pred)})
-
 if __name__ == "__main__":
-    app.run(port=8008, debug=True)
+    app.run(port=8011, debug=True)
 
     #http://localhost:59829/predict?sentence=amazing!
 
@@ -127,6 +119,6 @@ if __name__ == "__main__":
 
     # outputs[0][0]
 
-    curr_dir = os.getcwd()
-    db = os.path.join(curr_dir, "movie_reviews.sqlite")
-    sqlite_insert(db, "testing", 0)
+    # curr_dir = os.getcwd()
+    # db = os.path.join(curr_dir, "movie_reviews.sqlite")
+    # sqlite_insert(db, "testing", 0)
