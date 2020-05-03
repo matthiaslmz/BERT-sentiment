@@ -8,17 +8,18 @@
 The motivation to using this dataset because it's already quite clean and has balanced classes: 50% positive and 50% negative reviews. 
 
 # Web application
-![review_page](https://raw.githubusercontent.com/matthiaslmz/BERT-sentiment/master/results/review.png)
+![review_page](https://raw.githubusercontent.com/matthiaslmz/BERT_XLNet-sentiment/master/results/review.png)
 
-![results_page](https://raw.githubusercontent.com/matthiaslmz/BERT-sentiment/master/results/results.png)
+![results_page](https://raw.githubusercontent.com/matthiaslmz/BERT_XLNet-sentiment/master/results/results.png)
 
-![thankyou_page](https://raw.githubusercontent.com/matthiaslmz/BERT-sentiment/master/results/feedback.png)
+![thankyou_page](https://raw.githubusercontent.com/matthiaslmz/BERT_XLNet-sentiment/master/results/feedback.png)
 
 
 # XLNet Fine-tuning
 Using a single P100 GPU, these are the parameters that are used in order to fine-tune XLNet.
 
 In `train.py`:
+
         train_dataset = IMDBXLNet(review=df_train.review.values, 
                               label=df_train.sentiment.values,
                               max_len=768)
