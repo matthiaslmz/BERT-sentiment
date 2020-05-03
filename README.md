@@ -13,3 +13,21 @@ The motivation to using this dataset because it's already quite clean and has ba
 ![results_page](https://raw.githubusercontent.com/matthiaslmz/BERT-sentiment/master/results/results.png)
 
 ![thankyou_page](https://raw.githubusercontent.com/matthiaslmz/BERT-sentiment/master/results/feedback.png)
+
+
+# XLNet Fine-tuning
+Using a single P100 GPU, these are the parameters that should be passed in order to fine-tune XLNet.
+
+In `train.py`:
+        train_dataset = IMDBXLNet(review=df_train.review.values, 
+                              label=df_train.sentiment.values,
+                              max_len=512)
+
+        valid_dataset = IMDBXLNet(review=df_valid.review.values, 
+                              label=df_valid.sentiment.values,
+                              max_len=512)
+
+        model = XLNetSentiment(train_dset=train_dataset, 
+                               eval_dset=valid_dataset, 
+                               train_batch_size = 6,
+                               eval_batch_size = 6)
