@@ -11,10 +11,10 @@ from transformers import (BertConfig, BertTokenizer, BertForSequenceClassificati
                         AdamW, get_linear_schedule_with_warmup)
 
 class BERTSentiment:
-    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    DEVICE = "cuda"
 
     def __init__(self,
-                 bert_pretrained_model=None,
+                 bert_pretrained_model="./models/bert-base-uncased",
                  bert_pretrained_tokenizer=None,
                  train_batch_size=8,
                  eval_batch_size=8,

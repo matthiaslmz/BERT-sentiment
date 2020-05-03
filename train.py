@@ -16,22 +16,26 @@ logging.basicConfig(level=logging.INFO)
 
 def run():
 
-    df = pd.read_csv("C:/Users/MatthiasL/Desktop/DATA/ghdata/BERT-sentiment/imdb_dataset.csv")
+    df = pd.read_csv("./data/imdb_dataset.csv")
     df = preprocess_imdb(df)
     df_train, df_valid = split_train_valid(dataframe=df, test_size=0.1, random_state=420)
 
-    # max_len=3177 because that is the length of the longest encoded sequence for the IMDB Dataset using XLNetTokenizer (based on SentencePiece)
+    # 3177 is the length of the longest encoded sequence for the IMDB Dataset using XLNetTokenizer (based on SentencePiece)
     train_dataset = IMDBXLNet(review=df_train.review.values, 
                               label=df_train.sentiment.values,
-                              max_len=3177)
+                              max_len=768)
 
     valid_dataset = IMDBXLNet(review=df_valid.review.values, 
                               label=df_valid.sentiment.values,
-                              max_len=3177)
+                              max_len=768)
 
-    model = XLNetSentiment(train_dset=train_dataset, eval_dset=valid_dataset)
-    model.train_model(ckpt_path="C:/Users/MatthiasL/Desktop/DATA/ghdata/BERT-sentiment/XLNetcheckpoints/checkpoint-%04d",
-                    output_path="C:/Users/MatthiasL/Desktop/DATA/ghdata/BERT-sentiment/XLNetout/checkpoint-%04d")
+    model = XLNetSentiment(train_dset=train_dataset, 
+                           eval_dset=valid_dataset, 
+                           train_batch_size = 6,
+                           eval_batch_size = 6)
+
+    model.train_model(ckpt_path="./XLNetcheckpoints/checkpoint-%04d",
+                      output_path="./XLNetout/checkpoint-%04d")
 
 if __name__ == "__main__":
     run()

@@ -16,16 +16,16 @@ The motivation to using this dataset because it's already quite clean and has ba
 
 
 # XLNet Fine-tuning
-Using a single P100 GPU, these are the parameters that should be passed in order to fine-tune XLNet.
+Using a single P100 GPU, these are the parameters that are used in order to fine-tune XLNet.
 
 In `train.py`:
         train_dataset = IMDBXLNet(review=df_train.review.values, 
                               label=df_train.sentiment.values,
-                              max_len=512)
+                              max_len=768)
 
         valid_dataset = IMDBXLNet(review=df_valid.review.values, 
                               label=df_valid.sentiment.values,
-                              max_len=512)
+                              max_len=768)
 
         model = XLNetSentiment(train_dset=train_dataset, 
                                eval_dset=valid_dataset, 
