@@ -7,22 +7,18 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, accuracy_score
 
-from transformers import (BertConfig,
-                        BertTokenizer,
-                        BertForSequenceClassification,
-                        AdamW,
-                        get_linear_schedule_with_warmup)
+from transformers import (XLNetConfig, XLNetTokenizer, XLNetForSequenceClassification,
+                        AdamW, get_linear_schedule_with_warmup)
 
-class BERTSentiment:
+class XLNetSentiment:
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
     def __init__(self,
-                 bert_pretrained_model=None,
-                 bert_pretrained_tokenizer=None,
+                 xlnet_pretrained_model="xlnet-base-cased",
+                 xlnet_pretrained_tokenizer=None,
                  train_batch_size=8,
                  eval_batch_size=8,
                  num_labels=2,
-                 max_len=512,
                  learning_rate=3e-5,
                  train_dset=None,
                  eval_dset=None):
@@ -33,11 +29,9 @@ class BERTSentiment:
         self.num_labels = num_labels
 
         # loading pre-trained models
-        self.config = BertConfig.from_pretrained(bert_pretrained_model)
-        self.config.num_labels = num_labels
-        self.model = BertForSequenceClassification.from_pretrained(
-            bert_pretrained_model, config=self.config).to(self.DEVICE)
-        self.tokenizer = BertTokenizer.from_pretrained(bert_pretrained_model)
+        self.model = XLNetForSequenceClassification.from_pretrained(
+            xlnet_pretrained_model, num_labels=num_labels).to(self.DEVICE)
+        self.tokenizer = XLNetTokenizer.from_pretrained(xlnet_pretrained_model)
 
         # creating / loading datasets
         self.train_dset = train_dset

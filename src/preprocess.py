@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn import model_selection
 import seaborn as sns
 import matplotlib.pyplot as plt
-from transformers import BertTokenizer, BertForSequenceClassification
+from transformers import BertTokenizer, BertForSequenceClassification, XLNetTokenizer, XLNetForSequenceClassification
 
 def preprocess_imdb(dataframe):
     dataframe.review = dataframe.review.str.lower()
@@ -30,10 +30,11 @@ def split_train_valid(dataframe, test_size, random_state=420):
     return train, valid
 
 
-class IMDBDataset:
-    def __init__(self, review, label):
+class IMDBBERT:
+    def __init__(self, review, label, max_len=512):
         self.review = review
         self.label = label
+        self.max_len  = max_len
         self.tokenizer = BertTokenizer.from_pretrained("C:/Users/MatthiasL/Desktop/DATA/Desktop/DATA/ghdata/models/bert-base-uncased", do_lower_case=True)
 
     def __len__(self):
@@ -42,7 +43,32 @@ class IMDBDataset:
     def __getitem__(self, item):
         review = str(self.review[item])
 
-        encoded_inputs = self.tokenizer.encode_plus(review, add_special_tokens=True, max_length=512, pad_to_max_length=True)
+        encoded_inputs = self.tokenizer.encode_plus(review, add_special_tokens=True, max_length=self.max_len, pad_to_max_length=True)
+        
+        input_tensor = encoded_inputs['input_ids']
+        attention_tensor = encoded_inputs['attention_mask']
+        label_tensor = torch.LongTensor(self.label[item])
+
+        return {
+            'input_ids': torch.tensor(input_tensor, dtype=torch.long),
+            'attention_masks': torch.tensor(attention_tensor, dtype=torch.long),
+            'label_tensor': torch.tensor(self.label[item], dtype=torch.long)
+        }
+
+class IMDBXLNet:
+    def __init__(self, review, label, max_len):
+        self.review = review
+        self.label = label
+        self.max_len = max_len
+        self.tokenizer = XLNetTokenizer.from_pretrained("xlnet-base-cased", do_lower_case=True)
+
+    def __len__(self):
+        return len(self.review)
+
+    def __getitem__(self, item):
+        review = str(self.review[item])
+
+        encoded_inputs = self.tokenizer.encode_plus(review, add_special_tokens=True, max_length=self.max_len, pad_to_max_length=True)
         
         input_tensor = encoded_inputs['input_ids']
         attention_tensor = encoded_inputs['attention_mask']
