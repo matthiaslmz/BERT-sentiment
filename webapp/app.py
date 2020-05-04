@@ -10,7 +10,7 @@ from transformers import BertForSequenceClassification, BertTokenizer
 app = Flask(__name__)
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-saved_model_path = "C:/Users/MatthiasL/Desktop/DATA/ghdata/BERT-sentiment/checkpoints/checkpoint-11000/"
+saved_model_path = "C:/Users/MatthiasL/Desktop/DATA/ghdata/BERT_XLNet-sentiment/checkpoints/checkpoint-11000/"
 model = BertForSequenceClassification.from_pretrained(saved_model_path)
 tokenizer = BertTokenizer.from_pretrained(saved_model_path)
 db_name = os.path.join(os.path.dirname(__file__), 'movie_reviews.sqlite')

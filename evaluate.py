@@ -2,7 +2,7 @@ import os
 from src.predict_func import get_train_loss_files, plot_loss_accuracy
 
 def main(image_name, 
-        data_path="C:/Users/MatthiasL/Desktop/DATA/Desktop/DATA/GitHub/BERT-sentiment",
+        data_path="C:/Users/MatthiasL/Desktop/DATA/Desktop/DATA/GitHub/BERT_XLNet-sentiment",
         save_model_eval_path = "results/",
         model_eval_image_name = "plot1.png"):
 
